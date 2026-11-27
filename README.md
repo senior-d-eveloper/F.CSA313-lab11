@@ -127,3 +127,44 @@ mvn test-compile org.pitest:pitest-maven:mutationCoverage 2>&1 | tee results/pit
 ```
 
 B1-ийн дараа **18 мутант** амьд үлдсэн (`results/pit-B1-mutations.csv`). Тэдгээрийн 13 нь `changed conditional boundary` (мөр 20, 23–26, 48 ×2, 52 ×2, 53 ×2, 54). Үлдсэн 5 нь `removed conditional – replaced comparison check with true`: мөр 48 (`gpa < 0`), мөр 52 ×2, мөр 53 ×2. Мөр 52, 53-ын мутантууд `&&`-ийн нэг талыг үргэлж үнэн болгодог. Тиймээс тэдгээрийг зөвхөн нэг нөхцөл нь биелээд нөгөө нь биелэхгүй оролтоор (жишээ нь 3.79/15, 3.8/14) устгана. Ийм оролтууд нь B2-ийн зааг тестүүдэд багтана. Хүлээгдэж байсанчлан assertion сул ангиллын мутантууд B1-ээр устаж, зааг утгын мутантууд хэвээр үлдсэн.
+
+### B2 — Зааг утгын тестүүд нэмэх
+
+Шинээр нэмсэн 7 тест (нийт 13 тест):
+
+| Тест | Шалгах заагууд | Агнах мутант (Хэсэг A-ийн мөр) |
+|---|---|---|
+| `letterGrade_boundaries` | 100, 90/89.99, 80/79.99, 70/69.99, 60/59.99, 0 | мөр 20, 23–26 boundary |
+| `letterGrade_justOutsideRange_throws` | −0.01, 100.01 | мөр 20-ийн хязгаар |
+| `gpa_eachLetterGrade` | switch-ийн A/B/C/D/F тус бүр + бүгдийг холисон {95,85,75,65,40} → 2.0 | мөр 36–44 |
+| `scholarship_100_boundary` | 3.8/15 → 100, 3.79/15 → 70, 3.8/14 → 70 | мөр 52 boundary + `&&`-ийн тал тус бүр |
+| `scholarship_70_boundary` | 3.4/12 → 70, 3.39/12 → 50, 3.4/11 → 50 | мөр 53 boundary + `&&`-ийн тал тус бүр |
+| `scholarship_50_boundary` | 3.0 → 50, 2.99 → 0 | мөр 54 boundary |
+| `scholarship_inputLimits` | gpa 0 ба 4 зөвшөөрөгдөнө, credits 0 зөвшөөрөгдөнө; −0.01, 4.01, credits −1 → exception | мөр 48 boundary ×2 + `gpa < 0` арилсан мутант |
+
+```bash
+mvn test-compile org.pitest:pitest-maven:mutationCoverage 2>&1 | tee results/pit-B2.txt
+```
+```
+>> Line Coverage (for mutated classes only): 25/25 (100%)
+>> Generated 63 mutations Killed 63 (100%)
+>> Mutations with no coverage 0. Test strength 100%
+```
+
+![PIT эцсийн тайлан](docs/pit-B2.png)
+
+B2-ийн дараа **амьд мутант 0** (`results/pit-B2-mutations.csv`: 63 KILLED). Хэсэг A-д бүх 46 мутантыг "тест дутуу" гэж ангилсан нь баталгаажлаа: equivalent мутант байгаагүй тул Mutation Coverage = Test Strength = 100% болсон.
+
+Эцсийн JaCoCo (`results/mvn-verify-B2.txt`, `results/jacoco-B2.csv`): Line 25/25, **Branch 41/41** (эхэндээ 38/41 байсан).
+
+![JaCoCo эцсийн тайлан](docs/jacoco-B2.png)
+
+### Хэмжилтүүдийн хураангуй
+
+| Хэмжилт | Гаралтын файл | Тест | Line | Branch | Killed / Generated | Mutation score |
+|---|---|---|---|---|---|---|
+| Эхлэл (starter) | `results/pit-start.txt` | 6 | 25/25 | 38/41 | 17 / 63 | **27%** |
+| B1-ийн дараа | `results/pit-B1.txt` | 6 | 25/25 | 38/41 | 45 / 63 | **71%** |
+| B2-ийн дараа (эцсийн) | `results/pit-B2.txt` | 13 | 25/25 | 41/41 | 63 / 63 | **100%** |
+
+Line coverage гурван хэмжилтэд ижил 100% байсан ч mutation score 27% → 71% → 100% болж өссөн. Энэ нь тестийн чанар зөвхөн "кодыг ажиллуулах" биш, "үр дүнг яг шалгах" (B1) болон "зааг дээр шалгах" (B2) зэргээс хамаардгийг харуулж байна.
