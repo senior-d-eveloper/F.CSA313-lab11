@@ -104,3 +104,26 @@ Starter багц дээр **46 мутант амьд үлдсэн** (63 − 17).
 | | **Нийт** | **46** | Тест дутуу: 46 (зааг 13, assertion сул/бусад 33); Equivalent: 0 | |
 
 **Ажиглалт:** Устсан 17 мутант нь ихэвчлэн exception шиддэг замуудад (мөр 20, 31, 48), эсвэл үр дүнг мужаас гаргадаг өөрчлөлтүүдэд (мөр 37, 39: `+= 4`/`+= 2` → `-=` нь сөрөг голч өгдөг) байсан. Харин мужийн дотор үлддэг аливаа буруу утгыг (жишээ нь "B"-ийн оронд "A", 70-ийн оронд 100) сул assertion-ууд огт барьдаггүй.
+
+## Хэсэг B: Тестүүдээ хүчтэй болгох
+
+### B1 — Assertion-уудыг хүчтэй болгох
+
+Тестийн **оролтуудыг өөрчлөөгүй**, зөвхөн сул шалгалтуудыг яг утгын `assertEquals` болгосон:
+
+| Тест | Өмнө (сул) | Одоо (B1) |
+|---|---|---|
+| `letterGrade_returnsExactGradeForAllRanges` | `assertNotNull(letterGrade(95))` ... | `assertEquals("A", letterGrade(95))`, "B"/85, "C"/75, "D"/65, "F"/30 |
+| `gpa_returnsExactAverage` | `assertTrue(g >= 0 && g <= 4)` | `assertEquals(3.5, gpa({95,85}), 1e-9)`, 1.5/{75,65}, 0.0/{40} |
+| `scholarship_returnsExactPercent` | `assertTrue(s >= 0 && s <= 100)` | `assertEquals(100, scholarship(3.9,16,false))`, 70, 50, 0, зөрчилтэй 0 |
+
+```bash
+mvn test-compile org.pitest:pitest-maven:mutationCoverage 2>&1 | tee results/pit-B1.txt
+```
+```
+>> Line Coverage (for mutated classes only): 25/25 (100%)
+>> Generated 63 mutations Killed 45 (71%)
+>> Mutations with no coverage 0. Test strength 71%
+```
+
+B1-ийн дараа **18 мутант** амьд үлдсэн (`results/pit-B1-mutations.csv`). Тэдгээрийн 13 нь `changed conditional boundary` (мөр 20, 23–26, 48 ×2, 52 ×2, 53 ×2, 54). Үлдсэн 5 нь `removed conditional – replaced comparison check with true`: мөр 48 (`gpa < 0`), мөр 52 ×2, мөр 53 ×2. Мөр 52, 53-ын мутантууд `&&`-ийн нэг талыг үргэлж үнэн болгодог. Тиймээс тэдгээрийг зөвхөн нэг нөхцөл нь биелээд нөгөө нь биелэхгүй оролтоор (жишээ нь 3.79/15, 3.8/14) устгана. Ийм оролтууд нь B2-ийн зааг тестүүдэд багтана. Хүлээгдэж байсанчлан assertion сул ангиллын мутантууд B1-ээр устаж, зааг утгын мутантууд хэвээр үлдсэн.
